@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campaign Journal</title>
+    <title>Campaign Journal - AUTO SYNC</title>
     <style>
         body {
             font-family: 'Georgia', serif;
@@ -36,6 +36,7 @@
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
         
         .btn {
@@ -48,11 +49,16 @@
         
         .btn:hover { background: #a0522d; }
         
-        .gm-controls {
-            background: #ffeb99;
-            padding: 10px;
-            border: 2px solid #8b4513;
-            margin-bottom: 10px;
+        .status {
+            background: #90EE90;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .sync-status {
+            font-size: 12px;
+            color: #8b4513;
         }
         
         .quest-log {
@@ -71,22 +77,42 @@
         
         .quest-item.highlighted {
             background: yellow !important;
+            border-left-color: red;
         }
         
         .quest-controls {
-            float: right;
-            margin-left: 10px;
+            margin-top: 10px;
         }
         
-        textarea {
-            width: 100%;
-            height: 50vh;
-            padding: 20px;
-            border: 2px solid #8b4513;
+        .journal-display {
             background: white;
+            border: 2px solid #8b4513;
+            padding: 20px;
+            min-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        
+        .journal-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #8b4513;
             font-family: inherit;
             font-size: 16px;
-            resize: none;
         }
         
         .color-key {
@@ -104,10 +130,19 @@
             vertical-align: middle;
         }
         
+        .online-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #90EE90;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
         .quest-input {
             width: 100%;
             padding: 5px;
-            margin: 5px 0;
+            margin: 2px 0;
             border: 1px solid #8b4513;
         }
     </style>
@@ -116,7 +151,7 @@
     <!-- LOGIN -->
     <div id="login">
         <h2>Enter Your Name</h2>
-        <input type="text" id="playerName" placeholder="Your Name" maxlength="20">
+        <input type="text" id="playerName" placeholder="Your Name (DM for GM powers)" maxlength="20">
         <br>
         <button class="btn" onclick="login()">Join Journal</button>
     </div>
@@ -124,37 +159,41 @@
     <!-- MAIN JOURNAL -->
     <div id="main">
         <div class="color-key">
-            <strong>Player Colors:</strong>
+            <strong>Players:</strong>
             <span id="colorKey"></span>
+            <span id="status" class="sync-status">🔄 Auto-sync every 3s</span>
         </div>
         
-        <!-- QUEST LOG - VISIBLE TO ALL -->
-        <div id="questLog" class="quest-log" style="display:none;">
+        <!-- QUEST LOG -->
+        <div id="questLog" class="quest-log">
             <h3>🎲 Quest Log</h3>
             <div id="questsContainer"></div>
         </div>
 
-        <div class="toolbar">
+        <!-- JOURNAL -->
+        <div class="journal-display" id="journalDisplay"></div>
+        
+        <div class="input-area">
             <div>
-                <button class="btn" onclick="format('bold')">B</button>
-                <button class="btn" onclick="format('italic')">I</button>
-                <button class="btn" onclick="format('underline')">U</button>
-                <button class="btn" onclick="format('highlight')">H</button>
-                <button class="btn" onclick="format('bullet')">•</button>
+                <button class="btn" onclick="formatInput('bold')">B</button>
+                <button class="btn" onclick="formatInput('italic')">I</button>
+                <button class="btn" onclick="formatInput('underline')">U</button>
+                <button class="btn" onclick="formatInput('highlight')">H</button>
+                <button class="btn" onclick="formatInput('bullet')">•</button>
             </div>
-            <div>
-                <span id="currentPlayer"></span>
-                <button class="btn" onclick="logout()">Logout</button>
-            </div>
+            <input type="text" id="messageInput" placeholder="Type your message... (Enter to send)" 
+                   onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="btn" onclick="sendMessage()">Send</button>
         </div>
 
-        <!-- GM CONTROLS - EDIT ONLY -->
-        <div id="gmControls" class="gm-controls" style="display:none;">
-            <strong>✏️ GM Edit Quest Log</strong>
-            <button class="btn" onclick="addQuest()">+ Add Quest</button>
+        <!-- GM CONTROLS -->
+        <div id="gmControls" style="display:none;">
+            <div class="toolbar">
+                <strong>✏️ GM Controls</strong>
+                <button class="btn" onclick="addQuest()">+ Add Quest</button>
+                <button class="btn" onclick="clearJournal()">Clear Journal</button>
+            </div>
         </div>
-
-        <textarea id="journal" placeholder="Start writing your campaign notes..."></textarea>
     </div>
 
     <script>
@@ -162,6 +201,7 @@
         let currentPlayer = '';
         let playerColor = '';
         let isGM = false;
+        let syncInterval;
 
         function getRandomColor() {
             return colors[Math.floor(Math.random() * colors.length)];
@@ -176,22 +216,24 @@
             localStorage.setItem(`color_${name}`, playerColor);
             isGM = name.toLowerCase() === 'dm' || name.toLowerCase() === 'game master';
             
+            // Clear old online status
+            localStorage.removeItem(`online_${currentPlayer}`);
+            
             document.getElementById('login').style.display = 'none';
             document.getElementById('main').style.display = 'block';
+            document.getElementById('gmControls').style.display = isGM ? 'block' : 'none';
             
-            document.getElementById('currentPlayer').innerHTML = 
-                `<span style="color:${playerColor}"><strong>${name}</strong></span>`;
+            // Mark as online
+            localStorage.setItem(`online_${currentPlayer}`, Date.now().toString());
             
-            if (isGM) {
-                document.getElementById('gmControls').style.display = 'block';
-            }
-            
-            loadJournal();
-            loadQuests();
             updateColorKey();
+            loadEverything();
+            startAutoSync();
         }
 
         function logout() {
+            localStorage.removeItem(`online_${currentPlayer}`);
+            clearInterval(syncInterval);
             document.getElementById('main').style.display = 'none';
             document.getElementById('login').style.display = 'block';
             document.getElementById('playerName').value = '';
@@ -200,49 +242,88 @@
         function updateColorKey() {
             const key = document.getElementById('colorKey');
             let html = '';
+            let onlineCount = 0;
+            
             for (let i = 0; i < localStorage.length; i++) {
                 const name = localStorage.key(i);
                 if (name && name.startsWith('color_')) {
                     const player = name.replace('color_', '');
                     const color = localStorage.getItem(name);
-                    html += `<span><span class="color-sample" style="background:${color}"></span>${player}</span> `;
+                    const lastSeen = localStorage.getItem(`online_${player}`);
+                    const isOnline = lastSeen && (Date.now() - parseInt(lastSeen)) < 30000; // 30s timeout
+                    const indicator = isOnline ? '<span class="online-indicator"></span>' : '⚫';
+                    html += `<span style="color:${color}">${indicator} ${player}</span> `;
+                    if (isOnline) onlineCount++;
                 }
             }
             key.innerHTML = html;
         }
 
-        function format(type) {
-            const ta = document.getElementById('journal');
-            const start = ta.selectionStart;
-            const end = ta.selectionEnd;
-            const text = ta.value.substring(start, end) || ' ';
+        function formatInput(type) {
+            const input = document.getElementById('messageInput');
+            let text = input.value;
             
-            let prefix = `[${currentPlayer}] `;
-            let formatted = prefix + text;
+            if (type === 'bold') text = '**' + text + '**';
+            if (type === 'italic') text = '*' + text + '*';
+            if (type === 'underline') text = '__' + text + '__';
+            if (type === 'highlight') text = '||' + text + '||';
+            if (type === 'bullet') text = '• ' + text;
             
-            if (type === 'bold') formatted = prefix + '**' + text + '**';
-            if (type === 'italic') formatted = prefix + '*' + text + '*';
-            if (type === 'underline') formatted = prefix + '__' + text + '__';
-            if (type === 'highlight') formatted = prefix + '||' + text + '||';
-            if (type === 'bullet') formatted = prefix + '• ' + text;
+            input.value = text;
+            input.focus();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = `[${currentPlayer}] ${input.value.trim()}`;
+            if (!message.trim()) return;
             
-            ta.setRangeText(formatted, start, end, 'end');
-            ta.focus();
-            saveJournal();
+            let journal = JSON.parse(localStorage.getItem('journal') || '[]');
+            journal.unshift({
+                player: currentPlayer,
+                color: playerColor,
+                message: input.value.trim(),
+                timestamp: Date.now()
+            });
+            
+            // Keep only last 100 entries
+            if (journal.length > 100) journal = journal.slice(0, 100);
+            
+            localStorage.setItem('journal', JSON.stringify(journal));
+            input.value = '';
+            input.focus();
+        }
+
+        function loadJournal() {
+            const journal = JSON.parse(localStorage.getItem('journal') || '[]');
+            const display = document.getElementById('journalDisplay');
+            display.innerHTML = journal.map(entry => `
+                <div class="journal-entry" style="color:${entry.color}">
+                    <strong>[${entry.player}]</strong> ${formatMarkdown(entry.message)}
+                </div>
+            `).join('');
+            display.scrollTop = display.scrollHeight;
+        }
+
+        function formatMarkdown(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/__(.*?)__/g, '<u>$1</u>')
+                .replace(/\|\|(.*?)\|\|/g, '<mark>$1</mark>')
+                .replace(/• /g, '•&nbsp;');
         }
 
         // QUEST FUNCTIONS
         function addQuest() {
-            const num = document.querySelectorAll('.quest-item').length + 1;
-            const quest = {
+            let quests = JSON.parse(localStorage.getItem('quests') || '[]');
+            quests.push({
                 id: Date.now(),
-                name: `Quest ${num}`,
+                name: `Quest ${quests.length + 1}`,
                 details: 'Quest description...',
                 reward: '500gp, 1000 XP',
                 highlighted: false
-            };
-            let quests = JSON.parse(localStorage.getItem('quests') || '[]');
-            quests.push(quest);
+            });
             localStorage.setItem('quests', JSON.stringify(quests));
             loadQuests();
         }
@@ -257,66 +338,77 @@
         function toggleHighlight(id) {
             let quests = JSON.parse(localStorage.getItem('quests') || '[]');
             const quest = quests.find(q => q.id === id);
-            if (quest) {
-                quest.highlighted = !quest.highlighted;
-                localStorage.setItem('quests', JSON.stringify(quests));
-                loadQuests();
-            }
+            if (quest) quest.highlighted = !quest.highlighted;
+            localStorage.setItem('quests', JSON.stringify(quests));
+            loadQuests();
         }
 
         function updateQuest(id, field, value) {
             let quests = JSON.parse(localStorage.getItem('quests') || '[]');
             const quest = quests.find(q => q.id === id);
-            if (quest) {
-                quest[field] = value;
-                localStorage.setItem('quests', JSON.stringify(quests));
-                loadQuests();
-            }
+            if (quest) quest[field] = value;
+            localStorage.setItem('quests', JSON.stringify(quests));
+            loadQuests();
         }
 
         function loadQuests() {
             const quests = JSON.parse(localStorage.getItem('quests') || '[]');
             const container = document.getElementById('questsContainer');
             
-            if (quests.length === 0) {
-                container.innerHTML = '<p>No quests yet!</p>';
-            } else {
-                container.innerHTML = quests.map(quest => `
-                    <div class="quest-item ${quest.highlighted ? 'highlighted' : ''}">
-                        <strong>${quest.name}</strong>
-                        <br><em>${quest.details}</em>
-                        <br><strong>Reward:</strong> ${quest.reward}
-                        ${isGM ? `
-                            <div class="quest-controls">
-                                <input class="quest-input" value="${quest.name}" onchange="updateQuest(${quest.id}, 'name', this.value)" placeholder="Name">
-                                <br>
-                                <textarea class="quest-input" style="height:40px;" onchange="updateQuest(${quest.id}, 'details', this.value)">${quest.details}</textarea>
-                                <br>
-                                <input class="quest-input" value="${quest.reward}" onchange="updateQuest(${quest.id}, 'reward', this.value)" placeholder="Reward">
-                                <br>
-                                <button class="btn" onclick="toggleHighlight(${quest.id})">${quest.highlighted ? 'Unhighlight' : 'Highlight'}</button>
-                                <button class="btn" onclick="removeQuest(${quest.id})" style="background:red;color:white">Delete</button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('');
+            container.innerHTML = quests.map(quest => `
+                <div class="quest-item ${quest.highlighted ? 'highlighted' : ''}">
+                    <strong>${quest.name}</strong>
+                    <br><em>${quest.details}</em>
+                    <br><strong>Reward:</strong> ${quest.reward}
+                    ${isGM ? `
+                        <div class="quest-controls">
+                            <input class="quest-input" value="${quest.name}" onblur="updateQuest(${quest.id}, 'name', this.value)">
+                            <textarea class="quest-input" style="height:40px;" onblur="updateQuest(${quest.id}, 'details', this.value)">${quest.details}</textarea>
+                            <input class="quest-input" value="${quest.reward}" onblur="updateQuest(${quest.id}, 'reward', this.value)">
+                            <br>
+                            <button class="btn" onclick="toggleHighlight(${quest.id})">${quest.highlighted ? 'Unhighlight' : 'Highlight'}</button>
+                            <button class="btn" onclick="removeQuest(${quest.id})" style="background:red;color:white">Delete</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('') || '<p>No quests yet!</p>';
+        }
+
+        function clearJournal() {
+            if (confirm('Clear ALL journal entries?')) {
+                localStorage.setItem('journal', '[]');
+                loadJournal();
             }
-            
-            document.getElementById('questLog').style.display = 'block';
         }
 
-        function loadJournal() {
-            const saved = localStorage.getItem('journal');
-            document.getElementById('journal').value = saved || '';
+        function loadEverything() {
+            loadJournal();
+            loadQuests();
+            updateColorKey();
         }
 
-        function saveJournal() {
-            localStorage.setItem('journal', document.getElementById('journal').value);
+        function startAutoSync() {
+            syncInterval = setInterval(() => {
+                loadEverything();
+                // Update online status
+                localStorage.setItem(`online_${currentPlayer}`, Date.now().toString());
+            }, 3000); // EVERY 3 SECONDS
         }
 
-        // Auto-save
-        setInterval(saveJournal, 5000);
-        
+        // Auto-save input on Enter
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                sendMessage();
+            }
+        });
+
+        // Cleanup on page close
+        window.onbeforeunload = () => {
+            localStorage.removeItem(`online_${currentPlayer}`);
+            clearInterval(syncInterval);
+        };
+
+        // Load on start
         window.onload = () => {
             updateColorKey();
         }
