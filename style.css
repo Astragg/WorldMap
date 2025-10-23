@@ -7,18 +7,13 @@ body {
     height: 100vh;
 }
 
-#map-container {
-    position: relative;
+#map {
     width: 100vw;
     height: 100vh;
+    cursor: grab;
 }
 
-#world-map {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: brightness(0.8) sepia(0.2);
-}
+#map:active { cursor: grabbing; }
 
 #book-btn {
     position: fixed;
@@ -37,7 +32,7 @@ body {
 
 #book-btn:hover { background: linear-gradient(145deg, #A0522D, #CD853F); }
 
-/* PARTY BOOK POPUP */
+/* PARTY BOOK POPUP (SAME AS BEFORE) */
 .book-popup {
     position: fixed;
     top: 0;
@@ -130,8 +125,12 @@ button:hover { background: #A0522D; }
 
 .hidden { display: none !important; }
 
-/* Markdown Styles */
 strong { color: #8B4513; font-weight: bold; }
 em { font-style: italic; }
 u { text-decoration: underline; }
 ul { list-style-type: disc; }
+
+/* Custom Leaflet markers */
+.leaflet-popup-content h3 { color: #8B4513; }
+.leaflet-popup-content-wrapper { background: #F4E4BC; }
+.leaflet-popup-tip { background: #F4E4BC; }
