@@ -14,11 +14,28 @@
             line-height: 1.6;
         }
         
+        #login {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        #login input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+        }
+        
+        #main {
+            display: none;
+        }
+        
         .toolbar {
             background: #e8d5b7;
             padding: 10px;
             border-bottom: 2px solid #8b4513;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
         }
         
         .btn {
@@ -31,9 +48,35 @@
         
         .btn:hover { background: #a0522d; }
         
+        .gm-controls {
+            background: #ffeb99;
+            padding: 10px;
+            border: 2px solid #8b4513;
+            margin-bottom: 10px;
+        }
+        
+        .quest-log {
+            background: #fff8dc;
+            border: 2px solid #8b4513;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .quest-item {
+            background: #f0e68c;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #8b4513;
+        }
+        
+        .quest-controls {
+            float: right;
+            margin-left: 10px;
+        }
+        
         textarea {
             width: 100%;
-            height: 80vh;
+            height: 60vh;
             padding: 20px;
             border: 2px solid #8b4513;
             background: white;
@@ -41,45 +84,193 @@
             font-size: 16px;
             resize: none;
         }
+        
+        .color-key {
+            background: #e8d5b7;
+            padding: 10px;
+            border: 2px solid #8b4513;
+            margin-bottom: 10px;
+        }
+        
+        .color-sample {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
-    <div class="toolbar">
-        <button class="btn" onclick="format('bold')">B</button>
-        <button class="btn" onclick="format('italic')">I</button>
-        <button class="btn" onclick="format('underline')">U</button>
-        <button class="btn" onclick="format('highlight')">H</button>
-        <button class="btn" onclick="format('bullet')">•</button>
+    <!-- LOGIN -->
+    <div id="login">
+        <h2>Enter Your Name</h2>
+        <input type="text" id="playerName" placeholder="Your Name" maxlength="20">
+        <br>
+        <button class="btn" onclick="login()">Join Journal</button>
     </div>
-    
-    <textarea id="journal" placeholder="Start writing your campaign notes..."></textarea>
-    
+
+    <!-- MAIN JOURNAL -->
+    <div id="main">
+        <div class="color-key">
+            <strong>Player Colors:</strong>
+            <span id="colorKey"></span>
+        </div>
+        
+        <div class="toolbar">
+            <div>
+                <button class="btn" onclick="format('bold')">B</button>
+                <button class="btn" onclick="format('italic')">I</button>
+                <button class="btn" onclick="format('underline')">U</button>
+                <button class="btn" onclick="format('highlight')">H</button>
+                <button class="btn" onclick="format('bullet')">•</button>
+            </div>
+            <div>
+                <span id="currentPlayer"></span>
+                <button class="btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- GM QUEST LOG -->
+        <div id="gmControls" class="gm-controls" style="display:none;">
+            <strong>🎲 GM Quest Log</strong>
+            <button class="btn" onclick="addQuest()">+ Add Quest</button>
+            <div id="questLog" class="quest-log"></div>
+        </div>
+
+        <textarea id="journal" placeholder="Start writing your campaign notes..."></textarea>
+    </div>
+
     <script>
+        const colors = ['#8B4513', '#CD853F', '#D2691E', '#A0522D', '#8B0000', '#DC143C'];
+        let currentPlayer = '';
+        let playerColor = '';
+        let isGM = false;
+
+        function getRandomColor() {
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function login() {
+            const name = document.getElementById('playerName').value.trim();
+            if (!name) return alert('Enter your name!');
+            
+            currentPlayer = name;
+            playerColor = localStorage.getItem(`color_${name}`) || getRandomColor();
+            localStorage.setItem(`color_${name}`, playerColor);
+            isGM = name.toLowerCase() === 'dm' || name.toLowerCase() === 'game master';
+            
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            
+            document.getElementById('currentPlayer').innerHTML = 
+                `<span style="color:${playerColor}"><strong>${name}</strong></span>`;
+            
+            loadJournal();
+            if (isGM) {
+                document.getElementById('gmControls').style.display = 'block';
+                loadQuests();
+            }
+            updateColorKey();
+        }
+
+        function logout() {
+            document.getElementById('main').style.display = 'none';
+            document.getElementById('login').style.display = 'block';
+            document.getElementById('playerName').value = '';
+        }
+
+        function updateColorKey() {
+            const key = document.getElementById('colorKey');
+            let html = '';
+            for (let i = 0; i < 5; i++) {
+                const name = localStorage.key(i);
+                if (name && name.startsWith('color_')) {
+                    const player = name.replace('color_', '');
+                    const color = localStorage.getItem(name);
+                    html += `<span><span class="color-sample" style="background:${color}"></span>${player}</span> `;
+                }
+            }
+            key.innerHTML = html;
+        }
+
         function format(type) {
             const ta = document.getElementById('journal');
             const start = ta.selectionStart;
             const end = ta.selectionEnd;
             const text = ta.value.substring(start, end);
             
-            let formatted = text;
-            if (type === 'bold') formatted = '**' + text + '**';
-            if (type === 'italic') formatted = '*' + text + '*';
-            if (type === 'underline') formatted = '<u>' + text + '</u>';
-            if (type === 'highlight') formatted = '||' + text + '||';
-            if (type === 'bullet') formatted = '\n• ' + text;
+            let formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}]</strong> ${text}</span>`;
+            if (type === 'bold') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] **${text}**</strong></span>`;
+            if (type === 'italic') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] *${text}*</strong></span>`;
+            if (type === 'underline') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] <u>${text}</u></strong></span>`;
+            if (type === 'highlight') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] <mark>${text}</mark></strong></span>`;
+            if (type === 'bullet') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}]</strong> • ${text}</span>`;
             
             ta.setRangeText(formatted, start, end, 'end');
             ta.focus();
+            saveJournal();
         }
-        
-        // Auto-save
-        setInterval(() => {
+
+        // GM QUEST FUNCTIONS
+        function addQuest() {
+            const num = document.querySelectorAll('.quest-item').length + 1;
+            const questDiv = document.createElement('div');
+            questDiv.className = 'quest-item';
+            questDiv.innerHTML = `
+                <input type="text" placeholder="Quest Name" value="Quest ${num}" onchange="saveQuests()">
+                <div><strong>Details:</strong></div>
+                <textarea placeholder="Quest description..." onchange="saveQuests()" style="height:60px;"></textarea>
+                <div><strong>Reward:</strong></div>
+                <input type="text" placeholder="Gold, XP, Items..." value="500gp, 1000 XP" onchange="saveQuests()">
+                <div class="quest-controls">
+                    <button class="btn" onclick="highlightQuest(this)" style="background:yellow">Highlight</button>
+                    <button class="btn" onclick="removeQuest(this)" style="background:red;color:white">Delete</button>
+                </div>
+            `;
+            document.getElementById('questLog').appendChild(questDiv);
+            saveQuests();
+        }
+
+        function removeQuest(btn) {
+            btn.parentElement.parentElement.remove();
+            saveQuests();
+        }
+
+        function highlightQuest(btn) {
+            const quest = btn.parentElement.parentElement;
+            quest.style.background = quest.style.background === 'yellow' ? '#f0e68c' : 'yellow';
+            saveQuests();
+        }
+
+        function loadQuests() {
+            const saved = localStorage.getItem('quests');
+            if (!saved) {
+                addQuest();
+                return;
+            }
+            document.getElementById('questLog').innerHTML = saved;
+        }
+
+        function saveQuests() {
+            localStorage.setItem('quests', document.getElementById('questLog').innerHTML);
+        }
+
+        function loadJournal() {
+            const saved = localStorage.getItem('journal');
+            document.getElementById('journal').value = saved || '';
+        }
+
+        function saveJournal() {
             localStorage.setItem('journal', document.getElementById('journal').value);
-        }, 5000);
+        }
+
+        // Auto-save
+        setInterval(saveJournal, 5000);
         
-        // Load
+        // Load on start
         window.onload = () => {
-            document.getElementById('journal').value = localStorage.getItem('journal') || '';
+            updateColorKey();
         }
     </script>
 </body>
