@@ -1,128 +1,196 @@
-// Initialize INTERACTIVE MAP
-let map, markers = [];
-let mapClicked = false;
+let map, markers = [], sessions = [], characters = [], loot = [];
 
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
+    loadData();
+    showPage('sessions');
 });
 
+// MAP SETUP
 function initMap() {
-    // Create map
-    map = L.map('map', {
-        crs: L.CRS.Simple,  // For PNG images
-        minZoom: -1,
-        maxZoom: 4
-    });
-
-    // Load your PNG map
-    const mapImg = L.imageOverlay('map.png', [[0, 0], [1000, 1000]]); // Adjust [width, height] to your PNG size
+    map = L.map('map', { crs: L.CRS.Simple, minZoom: -1, maxZoom: 4 });
+    const mapImg = L.imageOverlay('map.png', [[0, 0], [2000, 1500]]); // CHANGE TO YOUR PNG SIZE
     map.addLayer(mapImg);
-
-    // Fit map to image bounds
-    const bounds = [[0, 0], [1000, 1000]];
-    map.fitBounds(bounds);
-
-    // Enable zoom controls
+    map.fitBounds([[0, 0], [2000, 1500]]);
     L.control.zoom({ position: 'topright' }).addTo(map);
-
-    // CLICK TO ADD PINS
-    map.on('click', function(e) {
-        if (!document.getElementById('party-book').classList.contains('hidden')) {
-            addMarker(e.latlng);
-        }
-    });
-
-    // Enable dragging
+    
+    map.on('click', addMapPin);
     map.dragging.enable();
 }
 
-// ADD PIN ON MAP
-function addMarker(latlng) {
-    const marker = L.marker(latlng, {
-        icon: L.divIcon({
-            className: 'custom-pin',
-            html: '📍',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        })
+// MAP PIN
+function addMapPin(e) {
+    if (document.getElementById('party-book').classList.contains('hidden')) return;
+    
+    const marker = L.marker(e.latlng, {
+        icon: L.divIcon({ className: 'custom-pin', html: '📍', iconSize: [25, 25] })
     }).addTo(map);
-
-    // Popup with location info
+    
     marker.bindPopup(`
-        <h3>📍 New Location</h3>
-        <p>Coords: ${Math.round(latlng.lat)}, ${Math.round(latlng.lng)}</p>
-        <button onclick="addToJournal('${latlng.lat}', '${latlng.lng}')">Add to Journal</button>
+        <b>📍 New Location</b><br>
+        ${Math.round(e.latlng.lat)}, ${Math.round(e.latlng.lng)}<br>
+        <button onclick="addLocationToEntry(${e.latlng.lat}, ${e.latlng.lng})">Add to Journal</button>
     `).openPopup();
-
-    markers.push(marker);
+    
+    markers.push({ marker, coords: [e.latlng.lat, e.latlng.lng] });
 }
 
-// ADD LOCATION TO JOURNAL TEXTAREA
-function addToJournal(lat, lng) {
-    document.getElementById('new-entry').value += `\n📍 Location (${Math.round(lat)}, ${Math.round(lng)}): `;
-    document.getElementById('new-entry').focus();
-}
-
-// Toggle Party Book
+// BOOK FUNCTIONS
 function toggleBook() {
     const book = document.getElementById('party-book');
     book.classList.toggle('hidden');
-    if (!book.classList.contains('hidden')) {
-        map.dragging.disable();  // Disable map drag while book open
-    } else {
-        map.dragging.enable();   // Re-enable when closed
-    }
+    if (!book.classList.contains('hidden')) map.dragging.disable();
+    else map.dragging.enable();
 }
 
-// Add New Entry (SAME AS BEFORE)
-function addEntry() {
-    const text = document.getElementById('new-entry').value;
+function showPage(page) {
+    document.querySelectorAll('.book-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById(page + '-page').classList.add('active');
+    event.target.classList.add('active');
+    if (page === 'locations') updateLocations();
+    if (page === 'loot') updateTotalGold();
+}
+
+// SESSIONS
+function newSession() {
+    document.getElementById('modal-title').textContent = 'New Session';
+    document.getElementById('entry-text').value = '';
+    document.getElementById('entry-modal').classList.remove('hidden');
+}
+
+function saveEntry() {
+    const text = document.getElementById('entry-text').value;
     if (!text.trim()) return;
     
-    const entry = createEntry(text);
-    document.getElementById('journal-content').insertBefore(entry, document.getElementById('journal-content').firstChild);
-    document.getElementById('new-entry').value = '';
+    const session = {
+        id: Date.now(),
+        title: `Session #${sessions.length + 1}`,
+        content: markdownToHtml(text),
+        timestamp: new Date().toLocaleString(),
+        raw: text
+    };
+    
+    sessions.unshift(session);
+    document.getElementById('sessions-content').innerHTML = sessions.map(renderSession).join('');
+    closeModal();
+    saveData();
 }
 
-// Create HTML Entry from Markdown
-function createEntry(text) {
-    const div = document.createElement('div');
-    div.className = 'entry';
+function renderSession(session) {
+    return `
+        <div class="session-entry">
+            <h3>${session.title} - ${session.timestamp}</h3>
+            <div>${session.content}</div>
+        </div>
+    `;
+}
+
+function searchSessions() {
+    const query = document.getElementById('search-sessions').value.toLowerCase();
+    const filtered = sessions.filter(s => 
+        s.raw.toLowerCase().includes(query) || s.title.toLowerCase().includes(query)
+    );
+    document.getElementById('sessions-content').innerHTML = filtered.map(renderSession).join('');
+}
+
+// CHARACTERS
+function newCharacter() {
+    const name = prompt('Character Name:');
+    if (!name) return;
+    const char = {
+        id: Date.now(),
+        name: name,
+        class: prompt('Class:') || 'Adventurer',
+        level: 1,
+        hp: 10,
+        avatar: '🗡️'
+    };
+    characters.push(char);
+    document.getElementById('characters-content').innerHTML = characters.map(renderCharacter).join('');
+    saveData();
+}
+
+function renderCharacter(char) {
+    return `
+        <div class="character-card">
+            <div class="char-avatar">${char.avatar}</div>
+            <div class="char-info">
+                <h4>${char.name}</h4>
+                <p><strong>Class:</strong> ${char.class} | <strong>Level:</strong> ${char.level}</p>
+                <p><strong>HP:</strong> ${char.hp}</p>
+            </div>
+        </div>
+    `;
+}
+
+// LOOT
+function newLoot() {
+    const item = prompt('Loot Item:');
+    const gold = parseInt(prompt('Gold Value:') || 0);
+    if (!item) return;
     
-    let html = text
+    loot.push({ item, gold });
+    document.getElementById('loot-content').innerHTML = loot.map(renderLoot).join('');
+    updateTotalGold();
+    saveData();
+}
+
+function renderLoot(item) {
+    return `<div class="loot-item">
+        <span>${item.item}</span>
+        <span>${item.gold}gp</span>
+    </div>`;
+}
+
+function updateTotalGold() {
+    const total = loot.reduce((sum, i) => sum + i.gold, 0);
+    document.getElementById('total-gold').textContent = total;
+}
+
+// LOCATIONS
+function updateLocations() {
+    document.getElementById('locations-content').innerHTML = markers.map(m => 
+        `<div class="session-entry">
+            <h3>📍 ${m.coords[0]}, ${m.coords[1]}</h3>
+            <p>Discovered: ${new Date().toLocaleString()}</p>
+        </div>`
+    ).join('');
+}
+
+function addLocationToEntry(lat, lng) {
+    document.getElementById('entry-text').value += `\n📍 Location (${Math.round(lat)}, ${Math.round(lng)}): `;
+}
+
+// MODAL
+function closeModal() { document.getElementById('entry-modal').classList.add('hidden'); }
+
+// MARKDOWN
+function markdownToHtml(text) {
+    return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/_(.*?)_/g, '<u>$1</u>')
         .replace(/\n/g, '<br>')
-        .replace(/^-\s+(.*$)/gm, '<ul><li>$1</li></ul>')
-        .replace(/<\/ul>/g, '</li></ul>');
-    
-    const now = new Date().toLocaleString();
-    div.innerHTML = `<h3>Entry - ${now}</h3><p>${html}</p>`;
-    
-    return div;
+        .replace(/^-\s+(.*$)/gm, '<li>$1</li>')
+        .replace(/<li>/g, '<ul><li>').replace(/<\/li>/g, '</li></ul>');
 }
 
-// Save to GitHub (SAME AS BEFORE)
-function saveJournal() {
-    const content = document.getElementById('journal-content').innerHTML;
-    const mdContent = htmlToMarkdown(content);
-    
-    const blob = new Blob([mdContent], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'party-journal.md';
-    a.click();
-    
-    alert('📝 Download saved! Upload party-journal.md to your GitHub repo!');
+// SAVE/LOAD (LocalStorage)
+function saveData() {
+    localStorage.setItem('dnd-sessions', JSON.stringify(sessions));
+    localStorage.setItem('dnd-characters', JSON.stringify(characters));
+    localStorage.setItem('dnd-loot', JSON.stringify(loot));
 }
 
-function htmlToMarkdown(html) {
-    return html
-        .replace(/<strong>(.*?)<\/strong>/g, '**$1**')
-        .replace(/<em>(.*?)<\/em>/g, '*$1*')
-        .replace(/<u>(.*?)<\/u>/g, '_$1_')
-        .replace(/<br>/g, '\n')
-        .replace(/<li>(.*?)<\/li>/g, '- $1\n');
+function loadData() {
+    sessions = JSON.parse(localStorage.getItem('dnd-sessions') || '[]');
+    characters = JSON.parse(localStorage.getItem('dnd-characters') || '[]');
+    loot = JSON.parse(localStorage.getItem('dnd-loot') || '[]');
+    
+    document.getElementById('sessions-content').innerHTML = sessions.map(renderSession).join('');
+    document.getElementById('characters-content').innerHTML = characters.map(renderCharacter).join('');
+    document.getElementById('loot-content').innerHTML = loot.map(renderLoot).join('');
+    updateTotalGold();
 }
