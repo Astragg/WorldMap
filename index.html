@@ -69,6 +69,10 @@
             border-left: 4px solid #8b4513;
         }
         
+        .quest-item.highlighted {
+            background: yellow !important;
+        }
+        
         .quest-controls {
             float: right;
             margin-left: 10px;
@@ -76,7 +80,7 @@
         
         textarea {
             width: 100%;
-            height: 60vh;
+            height: 50vh;
             padding: 20px;
             border: 2px solid #8b4513;
             background: white;
@@ -99,6 +103,13 @@
             margin-right: 5px;
             vertical-align: middle;
         }
+        
+        .quest-input {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #8b4513;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +128,12 @@
             <span id="colorKey"></span>
         </div>
         
+        <!-- QUEST LOG - VISIBLE TO ALL -->
+        <div id="questLog" class="quest-log" style="display:none;">
+            <h3>🎲 Quest Log</h3>
+            <div id="questsContainer"></div>
+        </div>
+
         <div class="toolbar">
             <div>
                 <button class="btn" onclick="format('bold')">B</button>
@@ -131,11 +148,10 @@
             </div>
         </div>
 
-        <!-- GM QUEST LOG -->
+        <!-- GM CONTROLS - EDIT ONLY -->
         <div id="gmControls" class="gm-controls" style="display:none;">
-            <strong>🎲 GM Quest Log</strong>
+            <strong>✏️ GM Edit Quest Log</strong>
             <button class="btn" onclick="addQuest()">+ Add Quest</button>
-            <div id="questLog" class="quest-log"></div>
         </div>
 
         <textarea id="journal" placeholder="Start writing your campaign notes..."></textarea>
@@ -166,11 +182,12 @@
             document.getElementById('currentPlayer').innerHTML = 
                 `<span style="color:${playerColor}"><strong>${name}</strong></span>`;
             
-            loadJournal();
             if (isGM) {
                 document.getElementById('gmControls').style.display = 'block';
-                loadQuests();
             }
+            
+            loadJournal();
+            loadQuests();
             updateColorKey();
         }
 
@@ -183,7 +200,7 @@
         function updateColorKey() {
             const key = document.getElementById('colorKey');
             let html = '';
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < localStorage.length; i++) {
                 const name = localStorage.key(i);
                 if (name && name.startsWith('color_')) {
                     const player = name.replace('color_', '');
@@ -198,62 +215,94 @@
             const ta = document.getElementById('journal');
             const start = ta.selectionStart;
             const end = ta.selectionEnd;
-            const text = ta.value.substring(start, end);
+            const text = ta.value.substring(start, end) || ' ';
             
-            let formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}]</strong> ${text}</span>`;
-            if (type === 'bold') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] **${text}**</strong></span>`;
-            if (type === 'italic') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] *${text}*</strong></span>`;
-            if (type === 'underline') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] <u>${text}</u></strong></span>`;
-            if (type === 'highlight') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}] <mark>${text}</mark></strong></span>`;
-            if (type === 'bullet') formatted = `<span style="color:${playerColor}"><strong>[${currentPlayer}]</strong> • ${text}</span>`;
+            let prefix = `[${currentPlayer}] `;
+            let formatted = prefix + text;
+            
+            if (type === 'bold') formatted = prefix + '**' + text + '**';
+            if (type === 'italic') formatted = prefix + '*' + text + '*';
+            if (type === 'underline') formatted = prefix + '__' + text + '__';
+            if (type === 'highlight') formatted = prefix + '||' + text + '||';
+            if (type === 'bullet') formatted = prefix + '• ' + text;
             
             ta.setRangeText(formatted, start, end, 'end');
             ta.focus();
             saveJournal();
         }
 
-        // GM QUEST FUNCTIONS
+        // QUEST FUNCTIONS
         function addQuest() {
             const num = document.querySelectorAll('.quest-item').length + 1;
-            const questDiv = document.createElement('div');
-            questDiv.className = 'quest-item';
-            questDiv.innerHTML = `
-                <input type="text" placeholder="Quest Name" value="Quest ${num}" onchange="saveQuests()">
-                <div><strong>Details:</strong></div>
-                <textarea placeholder="Quest description..." onchange="saveQuests()" style="height:60px;"></textarea>
-                <div><strong>Reward:</strong></div>
-                <input type="text" placeholder="Gold, XP, Items..." value="500gp, 1000 XP" onchange="saveQuests()">
-                <div class="quest-controls">
-                    <button class="btn" onclick="highlightQuest(this)" style="background:yellow">Highlight</button>
-                    <button class="btn" onclick="removeQuest(this)" style="background:red;color:white">Delete</button>
-                </div>
-            `;
-            document.getElementById('questLog').appendChild(questDiv);
-            saveQuests();
+            const quest = {
+                id: Date.now(),
+                name: `Quest ${num}`,
+                details: 'Quest description...',
+                reward: '500gp, 1000 XP',
+                highlighted: false
+            };
+            let quests = JSON.parse(localStorage.getItem('quests') || '[]');
+            quests.push(quest);
+            localStorage.setItem('quests', JSON.stringify(quests));
+            loadQuests();
         }
 
-        function removeQuest(btn) {
-            btn.parentElement.parentElement.remove();
-            saveQuests();
+        function removeQuest(id) {
+            let quests = JSON.parse(localStorage.getItem('quests') || '[]');
+            quests = quests.filter(q => q.id !== id);
+            localStorage.setItem('quests', JSON.stringify(quests));
+            loadQuests();
         }
 
-        function highlightQuest(btn) {
-            const quest = btn.parentElement.parentElement;
-            quest.style.background = quest.style.background === 'yellow' ? '#f0e68c' : 'yellow';
-            saveQuests();
+        function toggleHighlight(id) {
+            let quests = JSON.parse(localStorage.getItem('quests') || '[]');
+            const quest = quests.find(q => q.id === id);
+            if (quest) {
+                quest.highlighted = !quest.highlighted;
+                localStorage.setItem('quests', JSON.stringify(quests));
+                loadQuests();
+            }
+        }
+
+        function updateQuest(id, field, value) {
+            let quests = JSON.parse(localStorage.getItem('quests') || '[]');
+            const quest = quests.find(q => q.id === id);
+            if (quest) {
+                quest[field] = value;
+                localStorage.setItem('quests', JSON.stringify(quests));
+                loadQuests();
+            }
         }
 
         function loadQuests() {
-            const saved = localStorage.getItem('quests');
-            if (!saved) {
-                addQuest();
-                return;
+            const quests = JSON.parse(localStorage.getItem('quests') || '[]');
+            const container = document.getElementById('questsContainer');
+            
+            if (quests.length === 0) {
+                container.innerHTML = '<p>No quests yet!</p>';
+            } else {
+                container.innerHTML = quests.map(quest => `
+                    <div class="quest-item ${quest.highlighted ? 'highlighted' : ''}">
+                        <strong>${quest.name}</strong>
+                        <br><em>${quest.details}</em>
+                        <br><strong>Reward:</strong> ${quest.reward}
+                        ${isGM ? `
+                            <div class="quest-controls">
+                                <input class="quest-input" value="${quest.name}" onchange="updateQuest(${quest.id}, 'name', this.value)" placeholder="Name">
+                                <br>
+                                <textarea class="quest-input" style="height:40px;" onchange="updateQuest(${quest.id}, 'details', this.value)">${quest.details}</textarea>
+                                <br>
+                                <input class="quest-input" value="${quest.reward}" onchange="updateQuest(${quest.id}, 'reward', this.value)" placeholder="Reward">
+                                <br>
+                                <button class="btn" onclick="toggleHighlight(${quest.id})">${quest.highlighted ? 'Unhighlight' : 'Highlight'}</button>
+                                <button class="btn" onclick="removeQuest(${quest.id})" style="background:red;color:white">Delete</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
             }
-            document.getElementById('questLog').innerHTML = saved;
-        }
-
-        function saveQuests() {
-            localStorage.setItem('quests', document.getElementById('questLog').innerHTML);
+            
+            document.getElementById('questLog').style.display = 'block';
         }
 
         function loadJournal() {
@@ -268,7 +317,6 @@
         // Auto-save
         setInterval(saveJournal, 5000);
         
-        // Load on start
         window.onload = () => {
             updateColorKey();
         }
