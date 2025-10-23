@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[Campaign Name] - Party Book</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Fullscreen Map Background -->
+    <div id="map-container">
+        <img src="map.png" id="world-map" alt="World Map">
+        
+        <!-- Floating Party Book Button -->
+        <button id="book-btn" onclick="toggleBook()">📖 Party Book</button>
+    </div>
+
+    <!-- POPUP PARTY JOURNAL (Like a Physical Book) -->
+    <div id="party-book" class="book-popup hidden">
+        <div class="book">
+            <div class="book-header">
+                <h2>📚 Party Journal</h2>
+                <button onclick="toggleBook()" class="close-btn">✕</button>
+            </div>
+            
+            <div class="book-content" id="journal-content">
+                <!-- Journal entries load here -->
+                <div class="entry">
+                    <h3>Session 1 - The Rusty Dagger Inn</h3>
+                    <p><em>Day 1:</em> Met at inn. Quest: Find lost heirloom.</p>
+                    <ul>
+                        <li><strong>Gold:</strong> 50gp each</li>
+                        <li><strong>Inventory:</strong> Rusty dagger, 3 potions</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Add New Entry -->
+            <div class="book-footer">
+                <textarea id="new-entry" placeholder="Session notes...&#10;**Bold** | *Italic* | _Underline_ | - Lists"></textarea>
+                <button onclick="addEntry()">Add Entry</button>
+                <button onclick="saveJournal()">💾 Save to GitHub</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
