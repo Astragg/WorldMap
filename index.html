@@ -3,101 +3,358 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📖 [Campaign Name] - The Party's Tome</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>Dragon's Hoard - D&D Campaign Journal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #2c1810 0%, #1a0f07 100%);
+            color: #e8d5b7;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 3px solid #d4af37;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #d4af37;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+        }
+
+        .campaign-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .info-card {
+            background: rgba(42, 24, 16, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #8b4513;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px;
+            background: rgba(139, 69, 19, 0.3);
+            border: none;
+            color: #e8d5b7;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: #d4af37;
+            color: #2c1810;
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(42, 24, 16, 0.95);
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #8b4513;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .character-card, .npc-card {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #d4af37;
+        }
+
+        .player-section {
+            background: rgba(212, 175, 55, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #d4af37;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #8b4513;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #e8d5b7;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 100px;
+        }
+
+        button {
+            background: #d4af37;
+            color: #2c1810;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #b8962e;
+        }
+
+        .session-log {
+            margin-top: 15px;
+        }
+
+        .session-entry {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #d4af37;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .nav-tabs { flex-direction: column; }
+            .section-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-    <!-- FULLSCREEN INTERACTIVE MAP -->
-    <div id="map"></div>
-    
-    <!-- BOOK BUTTON (GOLD LEATHER) -->
-    <button id="book-btn" onclick="toggleBook()">📖 OPEN TOME</button>
+    <div class="container">
+        <header>
+            <h1>🐉 Dragon's Hoard 🗡️</h1>
+            <div class="campaign-info">
+                <div class="info-card">
+                    <strong>Campaign:</strong><br>
+                    <input type="text" id="campaignName" placeholder="Enter Campaign Name" value="The Forgotten Realms">
+                </div>
+                <div class="info-card">
+                    <strong>DM:</strong><br>
+                    <input type="text" id="dmName" placeholder="DM Name" value="Dungeon Master Alex">
+                </div>
+                <div class="info-card">
+                    <strong>System:</strong><br>
+                    <input type="text" id="system" placeholder="Edition" value="D&D 5e">
+                </div>
+                <div class="info-card">
+                    <strong>Last Session:</strong><br>
+                    <input type="date" id="lastSession">
+                </div>
+                <div class="info-card">
+                    <strong>Next Session:</strong><br>
+                    <input type="date" id="nextSession">
+                </div>
+            </div>
+        </header>
 
-    <!-- THE PARTY BOOK (3D LEATHER-BOUND) -->
-    <div id="party-book" class="book-container hidden">
-        <!-- BOOK COVER -->
-        <div class="book-cover" onclick="toggleBook()">
-            <div class="cover-text">
-                <h1>THE</h1>
-                <h1>PARTY'S</h1>
-                <h1>TOME</h1>
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('characters')">Characters</button>
+            <button class="nav-tab" onclick="showTab('npcs')">NPCs</button>
+            <button class="nav-tab" onclick="showTab('world')">World Info</button>
+            <button class="nav-tab" onclick="showTab('sessions')">Session Logs</button>
+            <button class="nav-tab" onclick="showTab('vtt')">VTT Setup</button>
+            <button class="nav-tab" onclick="showTab('inventory')">Inventory</button>
+        </nav>
+
+        <!-- CHARACTERS TAB -->
+        <div id="characters" class="tab-content active">
+            <h2>Player Characters</h2>
+            <div class="section-grid">
+                <div class="player-section">
+                    <div class="player-name">Player 1 - Character Name</div>
+                    <input type="text" placeholder="Character Name"><br>
+                    <input type="text" placeholder="Class/Level"><br>
+                    <textarea placeholder="Background, Stats, Abilities"></textarea>
+                    <input type="text" placeholder="VTT Token URL">
+                </div>
+                <div class="player-section">
+                    <div class="player-name">Player 2 - Character Name</div>
+                    <input type="text" placeholder="Character Name"><br>
+                    <input type="text" placeholder="Class/Level"><br>
+                    <textarea placeholder="Background, Stats, Abilities"></textarea>
+                    <input type="text" placeholder="VTT Token URL">
+                </div>
+                <div class="player-section">
+                    <div class="player-name">Player 3 - Character Name</div>
+                    <input type="text" placeholder="Character Name"><br>
+                    <input type="text" placeholder="Class/Level"><br>
+                    <textarea placeholder="Background, Stats, Abilities"></textarea>
+                    <input type="text" placeholder="VTT Token URL">
+                </div>
+                <div class="player-section">
+                    <div class="player-name">Player 4 - Character Name</div>
+                    <input type="text" placeholder="Character Name"><br>
+                    <input type="text" placeholder="Class/Level"><br>
+                    <textarea placeholder="Background, Stats, Abilities"></textarea>
+                    <input type="text" placeholder="VTT Token URL">
+                </div>
+                <div class="player-section">
+                    <div class="player-name">Player 5 - Character Name</div>
+                    <input type="text" placeholder="Character Name"><br>
+                    <input type="text" placeholder="Class/Level"><br>
+                    <textarea placeholder="Background, Stats, Abilities"></textarea>
+                    <input type="text" placeholder="VTT Token URL">
+                </div>
             </div>
         </div>
 
-        <!-- BOOK PAGES -->
-        <div class="book-pages">
-            <!-- NAV TABS -->
-            <div class="page-tabs">
-                <button class="tab-btn active" onclick="showPage('sessions')">📝 Sessions</button>
-                <button class="tab-btn" onclick="showPage('characters')">👥 Characters</button>
-                <button class="tab-btn" onclick="showPage('loot')">💰 Loot</button>
-                <button class="tab-btn" onclick="showPage('locations')">📍 Locations</button>
-            </div>
+        <!-- NPCS TAB -->
+        <div id="npcs" class="tab-content">
+            <h2>NPCs</h2>
+            <textarea placeholder="List NPCs with details&#10;- Name | Role | Location | Notes&#10;- Tavern Owner | Friendly | Waterdeep | Loves gold"></textarea>
+        </div>
 
-            <!-- SESSIONS PAGE -->
-            <div id="sessions-page" class="book-page active">
-                <div class="page-header">
-                    <h2>📜 Session Chronicle</h2>
-                    <div class="tools">
-                        <input type="text" id="search-sessions" placeholder="🔍 Search sessions..." onkeyup="searchSessions()">
-                        <button onclick="newSession()">➕ New Session</button>
-                    </div>
+        <!-- WORLD INFO TAB -->
+        <div id="world" class="tab-content">
+            <h2>World Information</h2>
+            <div class="section-grid">
+                <div>
+                    <h3>Locations</h3>
+                    <textarea placeholder="Key locations and maps&#10;- Waterdeep | VTT Map URL&#10;- Baldur's Gate | VTT Map URL"></textarea>
                 </div>
-                <div id="sessions-content" class="content-scroll">
-                    <!-- Sessions load here -->
+                <div>
+                    <h3>Factions</h3>
+                    <textarea placeholder="Factions and relationships"></textarea>
+                </div>
+                <div>
+                    <h3>Plot Hooks</h3>
+                    <textarea placeholder="Current quests and storylines"></textarea>
                 </div>
             </div>
+        </div>
 
-            <!-- CHARACTERS PAGE -->
-            <div id="characters-page" class="book-page">
-                <div class="page-header">
-                    <h2>👥 Party Roster</h2>
-                    <button onclick="newCharacter()">➕ Add Character</button>
-                </div>
-                <div id="characters-content" class="content-scroll">
-                    <!-- Character sheets -->
-                </div>
-            </div>
+        <!-- SESSION LOGS TAB -->
+        <div id="sessions" class="tab-content">
+            <h2>Session Logs</h2>
+            <button onclick="addSession()">+ New Session</button>
+            <div id="sessionContainer" class="session-log"></div>
+        </div>
 
-            <!-- LOOT PAGE -->
-            <div id="loot-page" class="book-page">
-                <div class="page-header">
-                    <h2>💰 Party Treasury</h2>
-                    <div class="total-loot">Total Gold: <span id="total-gold">0</span>gp</div>
-                    <button onclick="newLoot()">➕ Add Loot</button>
+        <!-- VTT SETUP TAB -->
+        <div id="vtt" class="tab-content">
+            <h2>VTT Setup</h2>
+            <div class="section-grid">
+                <div>
+                    <h3>VTT Platform</h3>
+                    <select>
+                        <option>Foundry VTT</option>
+                        <option>Roll20</option>
+                        <option>OwlBear Rodeo</option>
+                        <option>Tableplop</option>
+                    </select>
+                    <input type="text" placeholder="VTT Room Link">
                 </div>
-                <div id="loot-content" class="content-scroll">
-                    <!-- Loot items -->
+                <div>
+                    <h3>Maps & Tokens</h3>
+                    <textarea placeholder="Current maps and token locations"></textarea>
+                </div>
+                <div>
+                    <h3>Sound & Music</h3>
+                    <input type="text" placeholder="Syrinscape Playlist">
+                    <input type="text" placeholder="YouTube Music URL">
                 </div>
             </div>
+        </div>
 
-            <!-- LOCATIONS PAGE -->
-            <div id="locations-page" class="book-page">
-                <div class="page-header">
-                    <h2>📍 Discovered Locations</h2>
-                </div>
-                <div id="locations-content" class="content-scroll">
-                    <!-- Map pins as list -->
-                </div>
-            </div>
+        <!-- INVENTORY TAB -->
+        <div id="inventory" class="tab-content">
+            <h2>Party Inventory</h2>
+            <textarea placeholder="Party gold, items, magic items&#10;Gold: 1250 gp&#10;Potions: 3 Healing&#10;Magic Items: +1 Longsword"></textarea>
         </div>
     </div>
 
-    <!-- NEW ENTRY MODAL -->
-    <div id="entry-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="modal-title">New Session</h3>
-            <textarea id="entry-text" placeholder="Write your entry...&#10;**Bold** | *Italic* | _Important_ | - Lists"></textarea>
-            <div class="modal-buttons">
-                <button onclick="saveEntry()">✨ Save Entry</button>
-                <button onclick="closeModal()">❌ Cancel</button>
-            </div>
-        </div>
-    </div>
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all nav tabs
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+        function addSession() {
+            const container = document.getElementById('sessionContainer');
+            const sessionNum = container.children.length + 1;
+            const sessionDiv = document.createElement('div');
+            sessionDiv.className = 'session-entry';
+            sessionDiv.innerHTML = `
+                <h4>Session ${sessionNum} - <input type="date"></h4>
+                <textarea placeholder="What happened? Key events, XP, loot, decisions..."></textarea>
+                <button onclick="this.parentElement.remove()">Delete</button>
+            `;
+            container.appendChild(sessionDiv);
+        }
+
+        // Initialize one session entry
+        addSession();
+
+        // Auto-save functionality
+        document.addEventListener('input', function() {
+            localStorage.setItem('dndJournal', document.documentElement.outerHTML);
+        });
+
+        // Load saved data
+        window.onload = function() {
+            const saved = localStorage.getItem('dndJournal');
+            if (saved) {
+                document.documentElement.outerHTML = saved;
+            }
+            document.getElementById('lastSession').valueAsDate = new Date();
+        }
+    </script>
 </body>
 </html>
