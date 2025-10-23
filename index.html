@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>[Campaign Name] - Party Book</title>
+    <!-- Leaflet CSS for zoom/pan -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Fullscreen Map Background -->
-    <div id="map-container">
-        <img src="map.png" id="world-map" alt="World Map">
-        
-        <!-- Floating Party Book Button -->
-        <button id="book-btn" onclick="toggleBook()">📖 Party Book</button>
-    </div>
+    <!-- INTERACTIVE MAP -->
+    <div id="map"></div>
+    
+    <!-- Floating Party Book Button -->
+    <button id="book-btn" onclick="toggleBook()">📖 Party Book</button>
 
-    <!-- POPUP PARTY JOURNAL (Like a Physical Book) -->
+    <!-- POPUP PARTY JOURNAL -->
     <div id="party-book" class="book-popup hidden">
         <div class="book">
             <div class="book-header">
@@ -24,7 +24,6 @@
             </div>
             
             <div class="book-content" id="journal-content">
-                <!-- Journal entries load here -->
                 <div class="entry">
                     <h3>Session 1 - The Rusty Dagger Inn</h3>
                     <p><em>Day 1:</em> Met at inn. Quest: Find lost heirloom.</p>
@@ -35,15 +34,16 @@
                 </div>
             </div>
             
-            <!-- Add New Entry -->
             <div class="book-footer">
-                <textarea id="new-entry" placeholder="Session notes...&#10;**Bold** | *Italic* | _Underline_ | - Lists"></textarea>
+                <textarea id="new-entry" placeholder="Session notes...&#10;**Bold** | *Italic* | _Underline_ | - Lists&#10;📍 Click map to pin locations!"></textarea>
                 <button onclick="addEntry()">Add Entry</button>
                 <button onclick="saveJournal()">💾 Save to GitHub</button>
             </div>
         </div>
     </div>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
