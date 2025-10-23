@@ -3,439 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campaign Codex - D&D Journal</title>
+    <title>Campaign Journal</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Georgia', serif;
-            background: linear-gradient(135deg, #f5f5dc 0%, #e8d5b7 50%, #d2b48c 100%);
+            background: #f5f5dc;
             color: #2c1810;
+            margin: 0;
+            padding: 20px;
             line-height: 1.6;
-            min-height: 100vh;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* BOOK COVER HEADER */
-        header {
-            text-align: center;
-            padding: 40px 20px;
-            background: linear-gradient(145deg, #8B4513, #A0522D);
-            color: #F5F5DC;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            position: relative;
-        }
-
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>");
-            opacity: 0.1;
-            background-size: cover;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            position: relative;
-            z-index: 1;
-        }
-
-        .campaign-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-            position: relative;
-            z-index: 1;
-        }
-
-        .info-card {
-            background: rgba(245, 245, 220, 0.9);
-            padding: 12px;
-            border-radius: 8px;
-            border: 2px solid #8B4513;
-            color: #2c1810;
-        }
-
-        /* BOOK PAGES NAV */
-        .nav-tabs {
-            display: flex;
-            background: linear-gradient(145deg, #F5F5DC, #E8D5B7);
-            border: 3px solid #8B4513;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 30px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .nav-tab {
-            flex: 1;
-            padding: 15px;
-            background: transparent;
-            border: none;
-            color: #2c1810;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            border-right: 2px solid #8B4513;
-        }
-
-        .nav-tab:last-child { border-right: none; }
-        .nav-tab:hover, .nav-tab.active {
-            background: #D2B48C;
-            color: #8B4513;
-        }
-
-        /* BOOK PAGE CONTENT */
-        .tab-content {
-            display: none;
-            background: linear-gradient(180deg, #F5F5DC 0%, #FFF8DC 100%);
-            padding: 30px;
-            border: 3px solid #8B4513;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            min-height: 600px;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* FORMATTING TOOLBAR */
-        .format-toolbar {
-            background: #E8D5B7;
+        
+        .toolbar {
+            background: #e8d5b7;
             padding: 10px;
-            border: 2px solid #8B4513;
-            border-radius: 8px;
+            border-bottom: 2px solid #8b4513;
             margin-bottom: 20px;
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
         }
-
-        .format-btn {
-            background: #D2B48C;
-            border: 1px solid #8B4513;
-            padding: 8px 12px;
-            border-radius: 4px;
+        
+        .btn {
+            background: #d2b48c;
+            border: 1px solid #8b4513;
+            padding: 5px 10px;
+            margin: 2px;
             cursor: pointer;
-            font-weight: bold;
-            color: #2c1810;
-            transition: background 0.2s;
         }
-
-        .format-btn:hover { background: #A0522D; color: #F5F5DC; }
-        .format-btn.active { background: #8B4513; color: #F5F5DC; }
-
-        /* BOOK SECTIONS */
-        .section-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin: 20px 0;
-        }
-
-        .character-card {
-            background: rgba(255, 248, 220, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #D2B48C;
-            margin-bottom: 15px;
-        }
-
-        .player-name {
-            font-weight: bold;
-            color: #8B4513;
-            font-size: 18px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #D2B48C;
-            padding-bottom: 5px;
-        }
-
-        /* EDITABLE TEXTAREAS */
-        .editable-text {
+        
+        .btn:hover { background: #a0522d; }
+        
+        textarea {
             width: 100%;
-            min-height: 120px;
-            padding: 15px;
-            border: 2px solid #D2B48C;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #2c1810;
-            font-family: 'Georgia', serif;
-            font-size: 14px;
-            line-height: 1.5;
-            resize: vertical;
-            outline: none;
-        }
-
-        .editable-text:focus {
-            border-color: #8B4513;
-            box-shadow: 0 0 5px rgba(139, 69, 19, 0.3);
-        }
-
-        /* SESSION ENTRIES */
-        .session-entry {
-            background: rgba(255, 248, 220, 0.7);
+            height: 80vh;
             padding: 20px;
-            margin: 15px 0;
-            border-radius: 10px;
-            border-left: 5px solid #8B4513;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .container { padding: 10px; }
-            h1 { font-size: 2em; }
-            .nav-tabs { flex-direction: column; }
-            .section-grid { grid-template-columns: 1fr; }
-            .format-toolbar { justify-content: center; }
+            border: 2px solid #8b4513;
+            background: white;
+            font-family: inherit;
+            font-size: 16px;
+            resize: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>📖 Campaign Codex</h1>
-            <div class="campaign-info">
-                <div class="info-card">
-                    <strong>Campaign:</strong><br>
-                    <input type="text" class="editable-text" placeholder="Campaign Name" value="The Forgotten Realms">
-                </div>
-                <div class="info-card">
-                    <strong>DM:</strong><br>
-                    <input type="text" class="editable-text" placeholder="DM Name" value="Alex the Wise">
-                </div>
-                <div class="info-card">
-                    <strong>System:</strong><br>
-                    <input type="text" class="editable-text" placeholder="Edition" value="D&D 5e">
-                </div>
-                <div class="info-card">
-                    <strong>Last Session:</strong><br>
-                    <input type="date" class="editable-text">
-                </div>
-                <div class="info-card">
-                    <strong>Next Session:</strong><br>
-                    <input type="date" class="editable-text">
-                </div>
-            </div>
-        </header>
-
-        <nav class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('characters')">👥 Characters</button>
-            <button class="nav-tab" onclick="showTab('npcs')">👤 NPCs</button>
-            <button class="nav-tab" onclick="showTab('world')">🌍 World</button>
-            <button class="nav-tab" onclick="showTab('sessions')">📝 Sessions</button>
-            <button class="nav-tab" onclick="showTab('vtt')">🎲 VTT</button>
-            <button class="nav-tab" onclick="showTab('inventory')">🎒 Inventory</button>
-        </nav>
-
-        <!-- CHARACTERS -->
-        <div id="characters" class="tab-content active">
-            <div class="format-toolbar">
-                <button class="format-btn" onclick="formatText('bold')">𝐁</button>
-                <button class="format-btn" onclick="formatText('italic')">𝑰</button>
-                <button class="format-btn" onclick="formatText('underline')">𝐔</button>
-                <button class="format-btn" onclick="formatText('highlight')">Highlight</button>
-                <button class="format-btn" onclick="formatText('bullet')">•</button>
-            </div>
-            <h2>Player Characters</h2>
-            <div class="section-grid">
-                <div class="character-card">
-                    <div class="player-name">Player 1</div>
-                    <input type="text" class="editable-text" placeholder="Character Name">
-                    <input type="text" class="editable-text" placeholder="Class/Level">
-                    <textarea class="editable-text" placeholder="Background, Stats, Abilities, Spells..."></textarea>
-                    <input type="text" class="editable-text" placeholder="VTT Token URL">
-                </div>
-                <div class="character-card">
-                    <div class="player-name">Player 2</div>
-                    <input type="text" class="editable-text" placeholder="Character Name">
-                    <input type="text" class="editable-text" placeholder="Class/Level">
-                    <textarea class="editable-text" placeholder="Background, Stats, Abilities, Spells..."></textarea>
-                    <input type="text" class="editable-text" placeholder="VTT Token URL">
-                </div>
-                <div class="character-card">
-                    <div class="player-name">Player 3</div>
-                    <input type="text" class="editable-text" placeholder="Character Name">
-                    <input type="text" class="editable-text" placeholder="Class/Level">
-                    <textarea class="editable-text" placeholder="Background, Stats, Abilities, Spells..."></textarea>
-                    <input type="text" class="editable-text" placeholder="VTT Token URL">
-                </div>
-                <div class="character-card">
-                    <div class="player-name">Player 4</div>
-                    <input type="text" class="editable-text" placeholder="Character Name">
-                    <input type="text" class="editable-text" placeholder="Class/Level">
-                    <textarea class="editable-text" placeholder="Background, Stats, Abilities, Spells..."></textarea>
-                    <input type="text" class="editable-text" placeholder="VTT Token URL">
-                </div>
-                <div class="character-card">
-                    <div class="player-name">Player 5</div>
-                    <input type="text" class="editable-text" placeholder="Character Name">
-                    <input type="text" class="editable-text" placeholder="Class/Level">
-                    <textarea class="editable-text" placeholder="Background, Stats, Abilities, Spells..."></textarea>
-                    <input type="text" class="editable-text" placeholder="VTT Token URL">
-                </div>
-            </div>
-        </div>
-
-        <!-- NPCS -->
-        <div id="npcs" class="tab-content">
-            <div class="format-toolbar">
-                <button class="format-btn" onclick="formatText('bold')">𝐁</button>
-                <button class="format-btn" onclick="formatText('italic')">𝑰</button>
-                <button class="format-btn" onclick="formatText('underline')">𝐔</button>
-                <button class="format-btn" onclick="formatText('highlight')">Highlight</button>
-                <button class="format-btn" onclick="formatText('bullet')">•</button>
-            </div>
-            <h2>NPCs</h2>
-            <textarea class="editable-text" placeholder="Name | Role | Location | Notes&#10;• Elminster | Archmage | Waterdeep | Friendly mentor&#10;• Goblin Chief | Enemy | Caves | 50 HP"></textarea>
-        </div>
-
-        <!-- WORLD -->
-        <div id="world" class="tab-content">
-            <div class="format-toolbar">
-                <button class="format-btn" onclick="formatText('bold')">𝐁</button>
-                <button class="format-btn" onclick="formatText('italic')">𝑰</button>
-                <button class="format-btn" onclick="formatText('underline')">𝐔</button>
-                <button class="format-btn" onclick="formatText('highlight')">Highlight</button>
-                <button class="format-btn" onclick="formatText('bullet')">•</button>
-            </div>
-            <h2>World Information</h2>
-            <div class="section-grid">
-                <div><h3>📍 Locations</h3><textarea class="editable-text" placeholder="• Waterdeep | VTT Map: [URL]&#10;• Baldur's Gate | VTT Map: [URL]"></textarea></div>
-                <div><h3>⚔️ Factions</h3><textarea class="editable-text" placeholder="• Harpers | Allies&#10;• Zhentarim | Enemies"></textarea></div>
-                <div><h3>🎯 Plot Hooks</h3><textarea class="editable-text" placeholder="• Missing heirloom in Waterdeep&#10;• Cult activity in the sewers"></textarea></div>
-            </div>
-        </div>
-
-        <!-- SESSIONS -->
-        <div id="sessions" class="tab-content">
-            <div class="format-toolbar">
-                <button class="format-btn" onclick="formatText('bold')">𝐁</button>
-                <button class="format-btn" onclick="formatText('italic')">𝑰</button>
-                <button class="format-btn" onclick="formatText('underline')">𝐔</button>
-                <button class="format-btn" onclick="formatText('highlight')">Highlight</button>
-                <button class="format-btn" onclick="formatText('bullet')">•</button>
-            </div>
-            <h2>Session Logs</h2>
-            <button class="format-btn" onclick="addSession()" style="margin-left:auto;">+ New Session</button>
-            <div id="sessionContainer"></div>
-        </div>
-
-        <!-- VTT -->
-        <div id="vtt" class="tab-content">
-            <div class="format-toolbar">
-                <button class="format-btn" onclick="formatText('bold')">𝐁</button>
-                <button class="format-btn" onclick="formatText('italic')">𝑰</button>
-                <button class="format-btn" onclick="formatText('underline')">𝐔</button>
-                <button class="format-btn" onclick="formatText('highlight')">Highlight</button>
-            </div>
-            <h2>VTT Setup</h2>
-            <div class="section-grid">
-                <div>
-                    <h3>Platform</h3>
-                    <select class="editable-text"><option>Foundry VTT</option><option>Roll20</option><option>OwlBear Rodeo</option></select>
-                    <input type="text" class="editable-text" placeholder="VTT Room Link">
-                </div>
-                <div>
-                    <h3>Maps & Tokens</h3>
-                    <textarea class="editable-text" placeholder="• Tavern Map: [URL]&#10;• Player Tokens: [URLs]"></textarea>
-                </div>
-                <div>
-                    <h3>Audio</h3>
-                    <input type="text" class="editable-text" placeholder="Syrinscape Playlist">
-                    <input type="text" class="editable-text" placeholder="YouTube Music">
-                </div>
-            </div>
-        </div>
-
-        <!-- INVENTORY -->
-        <div id="inventory" class="tab-content">
-            <div class="format-toolbar">
-                <button class="format-btn" onclick="formatText('bold')">𝐁</button>
-                <button class="format-btn" onclick="formatText('italic')">𝑰</button>
-                <button class="format-btn" onclick="formatText('underline')">𝐔</button>
-                <button class="format-btn" onclick="formatText('highlight')">Highlight</button>
-                <button class="format-btn" onclick="formatText('bullet')">•</button>
-            </div>
-            <h2>Party Inventory</h2>
-            <textarea class="editable-text" placeholder="**Gold:** 1250 gp&#10;• **3 Healing Potions**&#10;• **+1 Longsword** (Player 1)&#10;• **Scroll of Fireball**"></textarea>
-        </div>
+    <div class="toolbar">
+        <button class="btn" onclick="format('bold')">B</button>
+        <button class="btn" onclick="format('italic')">I</button>
+        <button class="btn" onclick="format('underline')">U</button>
+        <button class="btn" onclick="format('highlight')">H</button>
+        <button class="btn" onclick="format('bullet')">•</button>
     </div>
-
+    
+    <textarea id="journal" placeholder="Start writing your campaign notes..."></textarea>
+    
     <script>
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        function formatText(type) {
-            const textarea = document.activeElement;
-            if (!textarea.classList.contains('editable-text')) return;
+        function format(type) {
+            const ta = document.getElementById('journal');
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const text = ta.value.substring(start, end);
             
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selected = textarea.value.substring(start, end);
+            let formatted = text;
+            if (type === 'bold') formatted = '**' + text + '**';
+            if (type === 'italic') formatted = '*' + text + '*';
+            if (type === 'underline') formatted = '<u>' + text + '</u>';
+            if (type === 'highlight') formatted = '||' + text + '||';
+            if (type === 'bullet') formatted = '\n• ' + text;
             
-            let formatted = '';
-            switch(type) {
-                case 'bold': formatted = `**${selected}**`; break;
-                case 'italic': formatted = `*${selected}*`; break;
-                case 'underline': formatted = `<u>${selected}</u>`; break;
-                case 'highlight': formatted = `||${selected}||`; break;
-                case 'bullet': formatted = `\n• ${selected}`; break;
-            }
-            
-            textarea.setRangeText(formatted, start, end, 'end');
-            textarea.focus();
+            ta.setRangeText(formatted, start, end, 'end');
+            ta.focus();
         }
-
-        function addSession() {
-            const container = document.getElementById('sessionContainer');
-            const sessionNum = container.children.length + 1;
-            const sessionDiv = document.createElement('div');
-            sessionDiv.className = 'session-entry';
-            sessionDiv.innerHTML = `
-                <h4>Session ${sessionNum} - <input type="date" class="editable-text"></h4>
-                <textarea class="editable-text" placeholder="Key events, XP, loot, decisions..."></textarea>
-                <button class="format-btn" onclick="this.parentElement.remove()" style="background:red;color:white;">Delete</button>
-            `;
-            container.appendChild(sessionDiv);
-        }
-
-        // Initialize
-        addSession();
-        document.querySelector('input[type="date"]').valueAsDate = new Date();
-
-        // Auto-save every 30 seconds
+        
+        // Auto-save
         setInterval(() => {
-            localStorage.setItem('campaignCodex', document.documentElement.outerHTML);
-        }, 30000);
-
-        // Load saved data
+            localStorage.setItem('journal', document.getElementById('journal').value);
+        }, 5000);
+        
+        // Load
         window.onload = () => {
-            const saved = localStorage.getItem('campaignCodex');
-            if (saved) document.documentElement.outerHTML = saved;
+            document.getElementById('journal').value = localStorage.getItem('journal') || '';
         }
     </script>
 </body>
