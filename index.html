@@ -3,46 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>[Campaign Name] - Party Book</title>
-    <!-- Leaflet CSS for zoom/pan -->
+    <title>📖 [Campaign Name] - The Party's Tome</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- INTERACTIVE MAP -->
+    <!-- FULLSCREEN INTERACTIVE MAP -->
     <div id="map"></div>
     
-    <!-- Floating Party Book Button -->
-    <button id="book-btn" onclick="toggleBook()">📖 Party Book</button>
+    <!-- BOOK BUTTON (GOLD LEATHER) -->
+    <button id="book-btn" onclick="toggleBook()">📖 OPEN TOME</button>
 
-    <!-- POPUP PARTY JOURNAL -->
-    <div id="party-book" class="book-popup hidden">
-        <div class="book">
-            <div class="book-header">
-                <h2>📚 Party Journal</h2>
-                <button onclick="toggleBook()" class="close-btn">✕</button>
+    <!-- THE PARTY BOOK (3D LEATHER-BOUND) -->
+    <div id="party-book" class="book-container hidden">
+        <!-- BOOK COVER -->
+        <div class="book-cover" onclick="toggleBook()">
+            <div class="cover-text">
+                <h1>THE</h1>
+                <h1>PARTY'S</h1>
+                <h1>TOME</h1>
             </div>
-            
-            <div class="book-content" id="journal-content">
-                <div class="entry">
-                    <h3>Session 1 - The Rusty Dagger Inn</h3>
-                    <p><em>Day 1:</em> Met at inn. Quest: Find lost heirloom.</p>
-                    <ul>
-                        <li><strong>Gold:</strong> 50gp each</li>
-                        <li><strong>Inventory:</strong> Rusty dagger, 3 potions</li>
-                    </ul>
+        </div>
+
+        <!-- BOOK PAGES -->
+        <div class="book-pages">
+            <!-- NAV TABS -->
+            <div class="page-tabs">
+                <button class="tab-btn active" onclick="showPage('sessions')">📝 Sessions</button>
+                <button class="tab-btn" onclick="showPage('characters')">👥 Characters</button>
+                <button class="tab-btn" onclick="showPage('loot')">💰 Loot</button>
+                <button class="tab-btn" onclick="showPage('locations')">📍 Locations</button>
+            </div>
+
+            <!-- SESSIONS PAGE -->
+            <div id="sessions-page" class="book-page active">
+                <div class="page-header">
+                    <h2>📜 Session Chronicle</h2>
+                    <div class="tools">
+                        <input type="text" id="search-sessions" placeholder="🔍 Search sessions..." onkeyup="searchSessions()">
+                        <button onclick="newSession()">➕ New Session</button>
+                    </div>
+                </div>
+                <div id="sessions-content" class="content-scroll">
+                    <!-- Sessions load here -->
                 </div>
             </div>
-            
-            <div class="book-footer">
-                <textarea id="new-entry" placeholder="Session notes...&#10;**Bold** | *Italic* | _Underline_ | - Lists&#10;📍 Click map to pin locations!"></textarea>
-                <button onclick="addEntry()">Add Entry</button>
-                <button onclick="saveJournal()">💾 Save to GitHub</button>
+
+            <!-- CHARACTERS PAGE -->
+            <div id="characters-page" class="book-page">
+                <div class="page-header">
+                    <h2>👥 Party Roster</h2>
+                    <button onclick="newCharacter()">➕ Add Character</button>
+                </div>
+                <div id="characters-content" class="content-scroll">
+                    <!-- Character sheets -->
+                </div>
+            </div>
+
+            <!-- LOOT PAGE -->
+            <div id="loot-page" class="book-page">
+                <div class="page-header">
+                    <h2>💰 Party Treasury</h2>
+                    <div class="total-loot">Total Gold: <span id="total-gold">0</span>gp</div>
+                    <button onclick="newLoot()">➕ Add Loot</button>
+                </div>
+                <div id="loot-content" class="content-scroll">
+                    <!-- Loot items -->
+                </div>
+            </div>
+
+            <!-- LOCATIONS PAGE -->
+            <div id="locations-page" class="book-page">
+                <div class="page-header">
+                    <h2>📍 Discovered Locations</h2>
+                </div>
+                <div id="locations-content" class="content-scroll">
+                    <!-- Map pins as list -->
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
+    <!-- NEW ENTRY MODAL -->
+    <div id="entry-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">New Session</h3>
+            <textarea id="entry-text" placeholder="Write your entry...&#10;**Bold** | *Italic* | _Important_ | - Lists"></textarea>
+            <div class="modal-buttons">
+                <button onclick="saveEntry()">✨ Save Entry</button>
+                <button onclick="closeModal()">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
